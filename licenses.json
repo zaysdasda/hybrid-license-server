@@ -22,5 +22,11 @@
     "tier": "PRO",
     "revoked": false,
     "deviceId": ""
+  },
+  {
+    "key": "HYB-EXTREME-EPBS-9QFD-CKPH",
+    "tier": "EXTREME",
+    "revoked": false,
+    "deviceId": ""
   }
 ]
