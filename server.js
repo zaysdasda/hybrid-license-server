@@ -198,7 +198,7 @@ app.get("/admin", (req, res) => {
               <th>Key</th>
               <th>Tier</th>
               <th>Revoked</th>
-              <th>Device ID</th>
+              <th>HWID</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -375,7 +375,7 @@ app.post("/generate-license", requireAdmin, (req, res) => {
 
 app.post("/validate-license", (req, res) => {
   const licenseKey = req.body && req.body.licenseKey;
-  const deviceId = req.body && req.body.deviceId;
+  const hwid = req.body && req.body.hwid;
 
   if (!licenseKey || typeof licenseKey !== "string") {
     return res.status(400).json({
@@ -403,23 +403,30 @@ app.post("/validate-license", (req, res) => {
     });
   }
 
-  if (deviceId && license.deviceId && license.deviceId !== deviceId) {
+  if (!license.deviceId && hwid) {
+    license.deviceId = hwid;
+    saveLicenses(licenses);
+
     return res.json({
-      valid: false,
-      message: "License is already bound to another device"
+      valid: true,
+      tier: license.tier,
+      key: license.key,
+      message: "License activated"
     });
   }
 
-  if (deviceId && !license.deviceId) {
-    license.deviceId = deviceId;
-    saveLicenses(licenses);
+  if (license.deviceId === hwid) {
+    return res.json({
+      valid: true,
+      tier: license.tier,
+      key: license.key,
+      message: "License validated"
+    });
   }
 
   return res.json({
-    valid: true,
-    tier: license.tier,
-    key: license.key,
-    message: "License validated"
+    valid: false,
+    message: "License already used on another PC"
   });
 });
 
