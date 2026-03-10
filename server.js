@@ -4,7 +4,7 @@ const fs = require("fs");
 const path = require("path");
 
 const app = express();
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 
 app.use(cors());
 app.use(express.json());
@@ -32,7 +32,7 @@ app.get("/", (req, res) => {
 });
 
 app.post("/validate-license", (req, res) => {
-  const { licenseKey, deviceId } = req.body;
+  const { licenseKey, deviceId } = req.body || {};
 
   if (!licenseKey || typeof licenseKey !== "string") {
     return res.status(400).json({
@@ -81,7 +81,7 @@ app.post("/validate-license", (req, res) => {
 });
 
 app.post("/create-license", (req, res) => {
-  const { key, tier } = req.body;
+  const { key, tier } = req.body || {};
 
   if (!key || !tier) {
     return res.status(400).json({
@@ -126,7 +126,7 @@ app.post("/create-license", (req, res) => {
 });
 
 app.post("/revoke-license", (req, res) => {
-  const { key } = req.body;
+  const { key } = req.body || {};
 
   if (!key) {
     return res.status(400).json({
@@ -157,7 +157,7 @@ app.post("/revoke-license", (req, res) => {
 });
 
 app.post("/unbind-license", (req, res) => {
-  const { key } = req.body;
+  const { key } = req.body || {};
 
   if (!key) {
     return res.status(400).json({
@@ -188,5 +188,5 @@ app.post("/unbind-license", (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Hybrid Tweaks license server running on http://localhost:${PORT}`);
+  console.log(`Hybrid Tweaks license server running on port ${PORT}`);
 });

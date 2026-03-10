@@ -17,22 +17,39 @@ function generateKey(tier) {
 }
 
 function loadLicenses() {
-  if (!fs.existsSync(LICENSE_FILE)) return [];
-  return JSON.parse(fs.readFileSync(LICENSE_FILE, "utf8"));
+  if (!fs.existsSync(LICENSE_FILE)) {
+    return [];
+  }
+
+  const raw = fs.readFileSync(LICENSE_FILE, "utf8");
+  return JSON.parse(raw);
 }
 
 function saveLicenses(data) {
-  fs.writeFileSync(LICENSE_FILE, JSON.stringify(data, null, 2));
+  fs.writeFileSync(LICENSE_FILE, JSON.stringify(data, null, 2), "utf8");
 }
 
 function createLicense(tier) {
+  const normalizedTier = String(tier).toUpperCase();
+
+  if (!["BASIC", "PRO", "EXTREME"].includes(normalizedTier)) {
+    console.log("Tier must be BASIC, PRO, or EXTREME");
+    process.exit(1);
+  }
+
   const licenses = loadLicenses();
 
-  const key = generateKey(tier);
+  let key = "";
+  let exists = true;
+
+  while (exists) {
+    key = generateKey(normalizedTier);
+    exists = licenses.some((x) => x.key.toLowerCase() === key.toLowerCase());
+  }
 
   const newLicense = {
     key: key,
-    tier: tier,
+    tier: normalizedTier,
     revoked: false,
     deviceId: ""
   };
@@ -54,4 +71,4 @@ if (!tier) {
   process.exit();
 }
 
-createLicense(tier.toUpperCase());
+createLicense(tier);

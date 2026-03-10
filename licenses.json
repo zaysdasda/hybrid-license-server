@@ -1,30 +1,12 @@
 [
   {
-    "key": "HYBRID-BASIC-2026",
-    "tier": "BASIC",
-    "revoked": false,
-    "deviceId": ""
-  },
-  {
-    "key": "HYBRID-PRO-2026",
-    "tier": "PRO",
-    "revoked": false,
-    "deviceId": "test-device"
-  },
-  {
-    "key": "HYBRID-EXTREME-2026",
+    "key": "HYB-EXTREME-EPBS-9QFD-CKPH",
     "tier": "EXTREME",
     "revoked": false,
     "deviceId": ""
   },
   {
-    "key": "HYB-PRO-AJK9-PBL9-YDCQ",
-    "tier": "PRO",
-    "revoked": false,
-    "deviceId": ""
-  },
-  {
-    "key": "HYB-EXTREME-EPBS-9QFD-CKPH",
+    "key": "HYB-EXTREME-EEGF-CSUL-QEAJ",
     "tier": "EXTREME",
     "revoked": false,
     "deviceId": ""
