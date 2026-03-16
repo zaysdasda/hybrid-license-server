@@ -2,16 +2,21 @@ const express = require("express");
 const cors = require("cors");
 const fs = require("fs");
 const path = require("path");
+const OpenAI = require("openai");
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: "2mb" }));
 app.use(express.urlencoded({ extended: true }));
 
 const LICENSE_FILE = path.join(__dirname, "licenses.json");
 const ADMIN_PASSWORD = "hybridadmin123";
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+});
 
 function loadLicenses() {
   if (!fs.existsSync(LICENSE_FILE)) return [];
@@ -73,6 +78,51 @@ function requireAdmin(req, res, next) {
   }
 
   next();
+}
+
+function normalizeHistory(history) {
+  if (!Array.isArray(history)) return [];
+  return history
+    .filter((item) => item && typeof item === "object")
+    .map((item) => ({
+      role:
+        item.role === "assistant" || item.role === "system"
+          ? item.role
+          : "user",
+      text: typeof item.text === "string" ? item.text.trim() : ""
+    }))
+    .filter((item) => item.text.length > 0)
+    .slice(-10);
+}
+
+function buildSystemPrompt(scan) {
+  return `
+You are Hybrid AI Assistant inside a Windows PC optimization app called Hybrid Tweaks.
+
+Your job:
+- Talk naturally like a real AI assistant.
+- Be friendly and conversational.
+- If the user says hi, hello, hey, how are you, or asks casual things, answer normally first.
+- If the user asks about PC performance, gaming, Fortnite, ping, lag, FPS, RAM, CPU, network, or tweaks, use the live scan data below.
+- Keep answers clear, helpful, and not too robotic.
+- When useful, suggest what section of Hybrid Tweaks they should use next.
+- Do not claim you changed settings unless the user explicitly asked you to and the app actually performed that action.
+- If scan data is missing, say what you can still help with.
+
+LIVE PC SCAN DATA
+CPU: ${scan.cpu || "Unknown"}
+GPU: ${scan.gpu || "Unknown"}
+CPU Usage: ${scan.cpuUsage ?? "Unknown"}%
+RAM Usage: ${scan.ramUsage ?? "Unknown"}%
+Free RAM: ${scan.freeRamGb ?? "Unknown"} GB
+Ping: ${scan.pingMs ?? "Unknown"} ms
+Top Processes: ${
+    Array.isArray(scan.topProcesses)
+      ? scan.topProcesses.join(", ")
+      : scan.topProcesses || "Unknown"
+  }
+Active Network Adapter: ${scan.activeNetworkName || "Unknown"}
+`.trim();
 }
 
 app.get("/", (req, res) => {
