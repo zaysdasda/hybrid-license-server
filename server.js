@@ -545,3 +545,16 @@ app.post("/unbind-license", requireAdmin, (req, res) => {
 app.listen(PORT, () => {
   console.log("Hybrid Tweaks license server running on port " + PORT);
 });
+{
+  "name": "hybrid-license-server",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "openai": "^4.104.0"
+  }
+}
