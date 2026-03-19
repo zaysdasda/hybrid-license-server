@@ -2,7 +2,6 @@ const express = require("express");
 const cors = require("cors");
 const fs = require("fs");
 const path = require("path");
-const OpenAI = require("openai");
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -14,27 +13,14 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Serve static files from this folder
+app.use(express.static(__dirname));
+
 // =====================
-// ENV / CONFIG
+// CONFIG
 // =====================
 const LICENSE_FILE = path.join(__dirname, "licenses.json");
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "hybridadmin123";
-
-let openai = null;
-
-function getOpenAIClient() {
-  if (!process.env.OPENAI_API_KEY) {
-    return null;
-  }
-
-  if (!openai) {
-    openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY
-    });
-  }
-
-  return openai;
-}
 
 // =====================
 // LICENSE FUNCTIONS
@@ -113,7 +99,11 @@ function createUniqueLicense(tier) {
   };
 
   licenses.push(newLicense);
-  saveLicenses(licenses);
+
+  const saved = saveLicenses(licenses);
+  if (!saved) {
+    throw new Error("Failed to save new license");
+  }
 
   return newLicense;
 }
@@ -135,60 +125,26 @@ function requireAdmin(req, res, next) {
 }
 
 // =====================
-// BASIC ROUTE
+// PAGE ROUTES
 // =====================
 app.get("/", (req, res) => {
   res.json({
     status: "ok",
-    message: "Hybrid Tweaks server running"
+    message: "Hybrid License Server running"
   });
 });
 
-// =====================
-// AI ROUTE
-// =====================
-app.post("/hybrid-ai-chat", async (req, res) => {
-  try {
-    const userMessage = String(req.body?.message || "").trim();
+app.get("/admin", (req, res) => {
+  res.sendFile(path.join(__dirname, "admin.html"));
+});
 
-    if (!userMessage) {
-      return res.json({ reply: "Ask me something." });
-    }
+app.get("/admin-login", (req, res) => {
+  res.sendFile(path.join(__dirname, "admin-login.html"));
+});
 
-    const client = getOpenAIClient();
-
-    if (!client) {
-      return res.status(500).json({
-        reply: "AI is not configured. Add OPENAI_API_KEY to your environment variables."
-      });
-    }
-
-    const response = await client.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are Hybrid AI, a Fortnite performance expert. Help users increase FPS, reduce lag, analyze PC performance, suggest tweak packs, estimate FPS gains, and speak naturally like ChatGPT."
-        },
-        {
-          role: "user",
-          content: userMessage
-        }
-      ],
-      temperature: 0.7,
-      max_tokens: 400
-    });
-
-    const reply =
-      response?.choices?.[0]?.message?.content ||
-      "I couldn't generate a response.";
-
-    res.json({ reply });
-  } catch (err) {
-    console.error("AI ERROR:", err?.response?.data || err.message || err);
-    res.status(500).json({ reply: "AI request failed" });
-  }
+// Optional shortcut
+app.get("/dashboard", (req, res) => {
+  res.sendFile(path.join(__dirname, "admin.html"));
 });
 
 // =====================
@@ -275,7 +231,14 @@ app.post("/validate-license", (req, res) => {
 
     if (!license.deviceId) {
       license.deviceId = hwid;
-      saveLicenses(licenses);
+
+      const saved = saveLicenses(licenses);
+      if (!saved) {
+        return res.status(500).json({
+          valid: false,
+          message: "Failed to bind license"
+        });
+      }
 
       return res.json({
         valid: true,
@@ -327,7 +290,14 @@ app.post("/revoke-license", requireAdmin, (req, res) => {
     }
 
     license.revoked = true;
-    saveLicenses(licenses);
+
+    const saved = saveLicenses(licenses);
+    if (!saved) {
+      return res.status(500).json({
+        success: false,
+        message: "Failed to save revoked license"
+      });
+    }
 
     res.json({
       success: true,
@@ -366,7 +336,14 @@ app.post("/unbind-license", requireAdmin, (req, res) => {
     }
 
     license.deviceId = "";
-    saveLicenses(licenses);
+
+    const saved = saveLicenses(licenses);
+    if (!saved) {
+      return res.status(500).json({
+        success: false,
+        message: "Failed to save unbound license"
+      });
+    }
 
     res.json({
       success: true,
@@ -379,6 +356,16 @@ app.post("/unbind-license", requireAdmin, (req, res) => {
       message: "Failed to unbind license"
     });
   }
+});
+
+// =====================
+// HEALTH CHECK
+// =====================
+app.get("/health", (req, res) => {
+  res.json({
+    success: true,
+    status: "online"
+  });
 });
 
 // =====================
