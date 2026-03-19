@@ -6,25 +6,14 @@ const path = require("path");
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// =====================
-// APP MIDDLEWARE
-// =====================
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// Serve static files from this folder
 app.use(express.static(__dirname));
 
-// =====================
-// CONFIG
-// =====================
 const LICENSE_FILE = path.join(__dirname, "licenses.json");
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "hybridadmin123";
 
-// =====================
-// LICENSE FUNCTIONS
-// =====================
 function loadLicenses() {
   try {
     if (!fs.existsSync(LICENSE_FILE)) {
@@ -49,11 +38,7 @@ function loadLicenses() {
 
 function saveLicenses(licenses) {
   try {
-    fs.writeFileSync(
-      LICENSE_FILE,
-      JSON.stringify(licenses, null, 2),
-      "utf8"
-    );
+    fs.writeFileSync(LICENSE_FILE, JSON.stringify(licenses, null, 2), "utf8");
     return true;
   } catch (err) {
     console.error("Failed to save licenses.json:", err);
@@ -124,9 +109,6 @@ function requireAdmin(req, res, next) {
   next();
 }
 
-// =====================
-// PAGE ROUTES
-// =====================
 app.get("/", (req, res) => {
   res.json({
     status: "ok",
@@ -142,14 +124,10 @@ app.get("/admin-login", (req, res) => {
   res.sendFile(path.join(__dirname, "admin-login.html"));
 });
 
-// Optional shortcut
 app.get("/dashboard", (req, res) => {
   res.sendFile(path.join(__dirname, "admin.html"));
 });
 
-// =====================
-// LICENSE ROUTES
-// =====================
 app.get("/licenses", requireAdmin, (req, res) => {
   try {
     res.json({
@@ -358,9 +336,6 @@ app.post("/unbind-license", requireAdmin, (req, res) => {
   }
 });
 
-// =====================
-// HEALTH CHECK
-// =====================
 app.get("/health", (req, res) => {
   res.json({
     success: true,
@@ -368,9 +343,6 @@ app.get("/health", (req, res) => {
   });
 });
 
-// =====================
-// START SERVER
-// =====================
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
